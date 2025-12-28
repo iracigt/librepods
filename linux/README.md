@@ -180,6 +180,30 @@ librepods-ctl noise:anc
 librepods-ctl noise:transparency
 ```
 
+## D-Bus Control
+
+LibrePods exposes a small session-bus D-Bus API for programmatic control.
+
+- Service: `me.kavishdevar.librepods`
+- Object path: `/LibrePods`
+- Interface: `local.librepods.AirPodsTrayApp`
+
+Available methods (selected):
+- `SetNoiseMode(int mode)` — set explicit noise mode. Modes: `0=Off`, `1=NoiseCancellation`, `2=Transparency`, `3=Adaptive`.
+- `ToggleNoiseMode()` — toggles between `Transparency` and `NoiseCancellation`.
+
+
+Set Transparency mode (mode `2`):
+
+```bash
+gdbus call --session --dest me.kavishdevar.librepods --object-path /LibrePods --method local.librepods.AirPodsTrayApp.SetNoiseMode 2
+```
+
+Toggle between Transparency <-> Noise Cancellation:
+
+```bash
+gdbus call --session --dest me.kavishdevar.librepods --object-path /LibrePods --method local.librepods.AirPodsTrayApp.ToggleNoiseMode
+```
 
 ## Hearing Aid
 

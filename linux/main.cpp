@@ -30,6 +30,7 @@
 #include "ble/bleutils.h"
 #include "QRCodeImageProvider.hpp"
 #include "systemsleepmonitor.hpp"
+#include <QDBusConnection>
 
 using namespace AirpodsTrayApp::Enums;
 
@@ -149,7 +150,36 @@ private:
         bool isEnabled = true; // Ability to disable the feature
     } CrossDevice;
 
-    void initializeDBus() { }
+    void initializeDBus()
+    {
+        QDBusConnection conn = QDBusConnection::sessionBus();
+        const QString serviceName = "me.kavishdevar.librepods";
+        const QString objectPath = "/LibrePods";
+
+        if (!conn.isConnected())
+        {
+            LOG_WARN("Session D-Bus is not available");
+            return;
+        }
+
+        if (!conn.registerService(serviceName))
+        {
+            LOG_WARN("Failed to register D-Bus service: " << conn.lastError().message());
+        }
+        else
+        {
+            LOG_INFO("Registered D-Bus service: " << serviceName);
+        }
+
+        if (!conn.registerObject(objectPath, this, QDBusConnection::ExportAllSlots))
+        {
+            LOG_WARN("Failed to register D-Bus object: " << conn.lastError().message());
+        }
+        else
+        {
+            LOG_INFO("Registered D-Bus object: " << objectPath);
+        }
+    }
 
     bool isAirPodsDevice(const QBluetoothDeviceInfo &device)
     {
@@ -395,6 +425,30 @@ public slots:
         {
             LOG_ERROR("Socket is not open, cannot write packet");
             return false;
+        }
+    }
+
+    // D-Bus methods: explicit setter and toggle
+    void SetNoiseMode(int mode)
+    {
+        if (mode < static_cast<int>(NoiseControlMode::MinValue) || mode > static_cast<int>(NoiseControlMode::MaxValue))
+        {
+            LOG_ERROR("Invalid noise mode provided over D-Bus: " << mode);
+            return;
+        }
+        setNoiseControlModeInt(mode);
+    }
+
+    void ToggleNoiseMode()
+    {
+        NoiseControlMode current = m_deviceInfo->noiseControlMode();
+        if (current == NoiseControlMode::Transparency)
+        {
+            setNoiseControlMode(NoiseControlMode::NoiseCancellation);
+        }
+        else
+        {
+            setNoiseControlMode(NoiseControlMode::Transparency);
         }
     }
 
