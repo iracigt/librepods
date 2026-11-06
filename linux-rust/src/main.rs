@@ -1,4 +1,5 @@
 mod bluetooth;
+mod dbus_service;
 mod devices;
 mod media_controller;
 mod ui;
@@ -148,6 +149,8 @@ async fn async_main(
         let handle = tray.spawn().await.unwrap();
         Some(handle)
     };
+
+    tokio::spawn(dbus_service::serve(device_managers.clone()));
 
     let session = bluer::Session::new().await?;
     let adapter = session.default_adapter().await?;
